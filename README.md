@@ -14,7 +14,7 @@ While this firmware aims to replicate the behavior of a CPLD, traditional, purpo
 
 ## Features
 
-*   **RGH 1.2 Logic**: Implements the classic Reset Glitch Hack 1.2 method, not RGH3.
+*   **RGH 1.2 Logic**: Implements the classic Reset Glitch Hack 1.2 method.
 *   **External Clock Synchronization**: Uses the Xbox 360's own clock signal for precise, stable timing, just like a CPLD.
 *   **PIO-Powered**: Leverages the Raspberry Pi Pico's Programmable I/O (PIO) to handle all high-speed, real-time glitching operations.
 *   **Tunable Parameters**: All critical timing values (`POST count`, `offset`, `width`) are easily configurable in the source code, allowing for fine-tuning to match your specific console.
