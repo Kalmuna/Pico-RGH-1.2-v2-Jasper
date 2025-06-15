@@ -41,7 +41,7 @@ You must have the [Raspberry Pi Pico C/C++ SDK](https://github.com/raspberrypi/p
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/your-username/PicoRGH12.git
+    git clone https://github.com/Kalmuna/Pico-RGH-1.2-v2-Jasper.git
     cd PicoRGH12
     ```
 
