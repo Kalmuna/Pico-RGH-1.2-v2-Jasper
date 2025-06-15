@@ -1,63 +1,54 @@
 ;
 ; RGH 1.2 CPLD replication for Raspberry Pi Pico
-;
-; This program waits for a boot cycle, counts POST toggles,
-; and then fires a timed glitch pulse, synchronized to an external clock.
+; Synchronized to an external clock.
 ;
 .program rgh12
 
-; Define pin locations for clarity
+; Define pin locations to match the C code
 .define POST_PIN 0
 .define RESET_PIN 1
 .define GLITCH_OUT_PIN 2
-.define CLK_IN_PIN 3 ; This pin is configured in C to drive the PIO clock
 
 .wrap_target
 main_loop:
-    ; --- Arming Sequence ---
-    ; Pull timing parameters from the C code into scratch registers
+    ; --- Arming Sequence: Pull timing config from CPU ---
     pull block          ; Pull POST_COUNT into OSR
     mov x, osr          ; Store POST_COUNT in X
     pull block          ; Pull GLITCH_OFFSET into OSR
     mov y, osr          ; Store GLITCH_OFFSET in Y
     pull block          ; Pull GLITCH_WIDTH into OSR
 
-    ; --- Wait for Boot Cycle ---
-    ; Wait until the RESET line goes high
-    wait_reset_high:
-        jmp pin, post_counter ; Jump to the counter if reset is high
-        jmp wait_reset_high   ; Otherwise, keep waiting
+    ; --- Wait for Boot Cycle to begin (RESET line goes high) ---
+wait_reset_high:
+    jmp pin, post_counter ; If RESET is high, start counting
+    jmp wait_reset_high   ; Otherwise, wait here
 
     ; --- POST Counting Sequence ---
-    ; The X register holds the number of POST toggles to wait for.
 post_counter:
-    ; Wait for a transition (edge) on the POST_IN pin.
-    ; This instruction stalls until the pin state changes from what it was.
+    ; Wait for a full toggle (low then high) on the POST_PIN
     wait 0 pin POST_PIN
     wait 1 pin POST_PIN
 
-    ; Decrement the counter and loop if not zero.
-    ; If reset drops during counting, jump back to the beginning.
-    jmp pin, main_loop      ; If RESET goes low, abort and re-arm
-    jmp x--, post_counter   ; Decrement X and wait for the next POST toggle
+    ; If reset drops mid-count, abort and re-arm the glitcher
+    jmp !pin, main_loop
+    ; Decrement counter and loop if not finished
+    jmp x--, post_counter
 
     ; --- Glitch Execution ---
-    ; POST count has been reached. Now wait for the offset period.
-    ; The Y register holds the offset value.
+    ; POST count finished. Now wait for the offset period.
 glitch_offset:
-    jmp y--, glitch_offset  ; Decrement Y each clock cycle.
+    jmp y--, glitch_offset  ; Decrement Y each clock cycle
 
     ; Fire the pulse. OSR holds the width value.
     mov pins, 0             ; Drive GLITCH_OUT pin LOW
-    
 glitch_width:
-    nop [2]                 ; Loop for the duration of the width. 3 cycles per loop
-    jmp x--, glitch_width
-    
+    mov pins, 0             ; Keep pin low
+    jmp x--, glitch_width   ; Loop using X (reloaded from OSR) for width duration
 
-    ; Pulse finished. The default 'set' state will return the pin high.
-    ; Now, wait for the reset line to go low, indicating the end of the boot attempt.
+    ; --- End of Cycle ---
+    ; Pulse finished. Pin returns high via 'set' config.
+    ; Wait for reset to go low, indicating the boot attempt is over.
 wait_reset_low:
-    jmp pin, wait_reset_low ; If reset is still high, wait
-    jmp main_loop           ; Reset is low, re-arm for the next try
+    jmp pin, wait_reset_low ; Wait if reset is still high
+    jmp main_loop           ; Reset is low, loop back to the start to re-arm
 .wrap
