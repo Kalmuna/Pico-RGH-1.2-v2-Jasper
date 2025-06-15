@@ -1,4 +1,4 @@
-# PicoRGH12 - RGH 1.2 CPLD Emulator for Xbox 360
+# Pico RGH 1.2 v2 CPLD Emulator for Xbox 360
 
 This repository contains the source code for a Raspberry Pi Pico-based firmware that emulates a CPLD-based RGH 1.2 glitch chip for Phat Xbox 360 consoles, with a focus on the **Jasper/Tonasket** motherboard revision.
 
